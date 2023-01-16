@@ -126,6 +126,7 @@ dependencies = [
 name = "bookmarking_tool"
 version = "0.1.0"
 dependencies = [
+ "percent-encoding",
  "rocket",
 ]
 
