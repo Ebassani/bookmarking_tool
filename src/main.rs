@@ -13,7 +13,8 @@ fn command(cmd: String) -> Redirect {
     let command = utils::get_command(&cmd);
     let redirect = match command {
         "yt" => utils::youtube_redirect(&cmd),
-        _ => utils::google_search(&cmd)
+        "w" => utils::direct_url(&cmd),
+        _ => utils::google_search(&cmd),
         };
     Redirect::to(redirect)
 }

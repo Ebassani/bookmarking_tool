@@ -19,7 +19,7 @@ pub fn google_search(search_txt: &str) -> String {
 }
 
 pub fn youtube_redirect(search_txt: &str) -> String {
-    let link = String::from("https://www.youtube.com/");
+    let link = String::from("https://youtube.com/");
     if search_txt == "yt" {
         link
     }
@@ -38,4 +38,9 @@ fn youtube_encode(text: &str) -> String {
     let text = text.replace(" ", "+");
     let search = format!("results?search_query={}", text);
     search
+}
+
+pub fn direct_url(link: &str) -> String {
+    let link = format!("https://{}",&link[2..]);
+    link
 }
