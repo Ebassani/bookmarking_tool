@@ -14,6 +14,7 @@ fn command(cmd: String) -> Redirect {
     let redirect = match command {
         "yt" => utils::youtube_redirect(&cmd),
         "w" => utils::direct_url(&cmd),
+        "rd" => utils::reddit_redirect(&cmd),
         _ => utils::google_search(&cmd),
         };
     Redirect::to(redirect)
