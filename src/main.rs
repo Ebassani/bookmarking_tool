@@ -12,8 +12,8 @@ fn index() -> &'static str {
 fn command(cmd: String) -> Redirect {
     let command = utils::get_command(&cmd);
     let redirect = match command {
-        "yt" => String::from("https://youtube.com"),
-        _ => String::from("https://google.com")
+        "yt" => utils::youtube_redirect(&cmd),
+        _ => utils::google_search(&cmd)
         };
     Redirect::to(redirect)
 }
