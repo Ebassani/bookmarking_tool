@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 rocket = "0.5.0-rc.2"
 percent-encoding = "2.1.0"
+regex = "1.7.1"

@@ -1,8 +1,11 @@
 extern crate percent_encoding;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
+use regex::Regex;
 
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"')
 .add(b'<').add(b'>').add(b'`');
+const URL_REGEX: &str =
+    r"https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)";
 
 fn percent_encoding(text: &str) -> String {
     let text = utf8_percent_encode(text,
@@ -18,10 +21,17 @@ pub fn get_command(command: &str) -> &str {
     &command
 }
 
-pub fn google_search(search_txt: &str) -> String {
-    let search = percent_encoding(search_txt);
-    let search_url = format!("https://google.com/search?q={}", search);
-    search_url
+pub fn search_direct(search_txt: &str) -> String {
+    let regex: Regex = Regex::new(URL_REGEX).unwrap();
+    if regex.is_match(search_txt) {
+        let url = direct_url(search_txt);
+        url
+    }
+    else {    
+        let search = percent_encoding(search_txt);
+        let search_url = format!("https://google.com/search?q={}", search);
+        search_url
+    }
 }
 
 pub fn youtube_redirect(search_txt: &str) -> String {
@@ -46,7 +56,7 @@ fn youtube_encode(text: &str) -> String {
     search
 }
 
-pub fn direct_url(link: &str) -> String {
+fn direct_url(link: &str) -> String {
     let link = format!("https://{}",&link[2..]);
     link
 }
