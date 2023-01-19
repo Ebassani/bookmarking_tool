@@ -11,11 +11,19 @@ fn index() -> &'static str {
 #[get("/command?<cmd>")]
 fn command(cmd: String) -> Redirect {
     let command = utils::get_command(&cmd);
-    let redirect = match command {
-        "yt" => utils:: test(&cmd),
-        "rd" => utils::reddit_redirect(&cmd),
-        _ => utils::search_direct(&cmd)
-        };
+    let mut search = true;
+    let mut redirect = String::new();
+    for code in utils::web_codes() {
+        if code == command {
+            redirect = utils::test(&cmd, &command);
+            search = false;
+            break;
+        }
+    }
+    if search {
+        redirect= utils::search_direct(&cmd)
+    }
+    
     Redirect::to(redirect)
 }
 

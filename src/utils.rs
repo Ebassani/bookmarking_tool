@@ -4,8 +4,7 @@ use regex::Regex;
 
 const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"')
 .add(b'<').add(b'>').add(b'`');
-const URL_REGEX: &str =
-    r"https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)";
+const URL_REGEX: &str = r"https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)";
 
 struct Website {
     id: u16,
@@ -16,7 +15,8 @@ struct Website {
     space_encoding: u16,
 }
 
-pub fn test(text: &str) -> String {
+fn websites() -> Vec<Website>  {
+    let mut websites: Vec<Website> = Vec::new();
     
     let youtube_cmds = vec![String::from("yt @")];
     let youtube_links = vec![String::from("{1}{2}"),String::from("{1}results?search_query={2}")];
@@ -28,32 +28,67 @@ pub fn test(text: &str) -> String {
         extend_link: youtube_links,
         space_encoding: 1,
     };
-    
-    if text == youtube.command {
-        return youtube.main_page
+
+    let reddit_cmds = vec![String::from("rd @"),String::from("rd /")];
+    let reddit_links = vec![String::from("{1}user/{2}"),
+    String::from("{1}r/{2}"), String::from("{1}search/?q={2}&include_over_18=1")];
+    let reddit = Website {
+        id: 1,
+        main_page: String::from("https://reddit.com/"),
+        command: String::from("rd"),
+        scnd_cmd: reddit_cmds,
+        extend_link: reddit_links,
+        space_encoding: 2,
+    };
+    websites.push(youtube);
+    websites.push(reddit);
+
+    websites
+}
+
+pub fn web_codes() -> Vec<String> {
+    let mut codes: Vec<String> = Vec::new();
+    for site in websites() {
+        codes.push(site.command);
     }
 
-    let main = &String::from(youtube.main_page).clone()[..];
-    for (i, scnd) in youtube.scnd_cmd.iter().enumerate() {
-        let size = scnd.len();
-        if &text[..size].to_string() == scnd {
-            let url = &youtube.extend_link[i].replace("{1}", main);
-            let url = &url.replace("{2}", &text[size..]);
-            return url.to_string();
+    codes
+}
+
+pub fn test(text: &str, cmd: &str) -> String {
+    for site in websites(){
+        if site.command == cmd {
+            if text == site.command {
+                return site.main_page
+            }
+        
+            let main = &String::from(site.main_page).clone()[..];
+            for (i, scnd) in site.scnd_cmd.iter().enumerate() {
+                let size = scnd.len();
+                if &text[..size].to_string() == scnd {
+                    let url = &site.extend_link[i].replace("{1}", main);
+                    let url = &url.replace("{2}", &text[size..]);
+                    return url.to_string();
+                }
+            }
+            
+            let url = site.extend_link[site.extend_link.len()-1].replace("{1}", main);
+            if site.space_encoding == 1 {
+                let encoded = plus_encode(&text[site.command.len()+1..]);
+                let url = url.replace("{2}", &encoded[..]);
+                return url
+            }
+            else {
+                let encoded = percent_encoding(&text[site.command.len()+1..]);
+                let url = url.replace("{2}", &encoded[..]);
+                return url
+            }
         }
     }
     
-    let url = youtube.extend_link[youtube.extend_link.len()-1].replace("{1}", main);
-    if youtube.space_encoding == 1 {
-        let encoded = plus_encode(&text[youtube.command.len()+1..]);
-        let url = url.replace("{2}", &encoded[..]);
-        url
-    }
-    else {
-        let encoded = percent_encoding(&text[youtube.command.len()+1..]);
-        let url = url.replace("{2}", &encoded[..]);
-        url
-    }
+    let default = String::from("http://127.0.0.1:8000");
+    default
+    
 }
 
 pub fn get_command(command: &str) -> &str {
@@ -73,27 +108,6 @@ pub fn search_direct(search_txt: &str) -> String {
     else {    
         let search = percent_encoding(search_txt);
         let search_url = format!("https://google.com/search?q={}", search);
-        search_url
-    }
-}
-
-pub fn reddit_redirect(search_txt: &str) -> String {
-    let link = String::from("https://reddit.com/");
-    if search_txt == "rd" {
-        link
-    }
-    else if &search_txt[..4] == "rd @" {
-        let user_url = format!("{}user/{}",link,&search_txt[4..]);
-        user_url
-    }
-    else if &search_txt[..4] == "rd /" {
-        let user_url = format!("{}r/{}",link,&search_txt[4..]);
-        user_url
-    }
-    else {
-        let encoded = percent_encoding(search_txt);
-        let search_url = format!("{}search/?q={}&include_over_18=1"
-        , link, encoded);
         search_url
     }
 }
