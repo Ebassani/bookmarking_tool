@@ -7,10 +7,53 @@ const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"')
 const URL_REGEX: &str =
     r"https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)";
 
-fn percent_encoding(text: &str) -> String {
-    let text = utf8_percent_encode(text,
-         FRAGMENT).to_string();
-    text
+struct Website {
+    id: u16,
+    main_page: String,
+    command: String,
+    scnd_cmd: Vec<String>,
+    extend_link: Vec<String>,
+    space_encoding: u16,
+}
+
+pub fn test(text: &str) -> String {
+    
+    let youtube_cmds = vec![String::from("yt @")];
+    let youtube_links = vec![String::from("{1}{2}"),String::from("{1}results?search_query={2}")];
+    let youtube = Website {
+        id: 0,
+        main_page: String::from("https://youtube.com/"),
+        command: String::from("yt"),
+        scnd_cmd: youtube_cmds,
+        extend_link: youtube_links,
+        space_encoding: 1,
+    };
+    
+    if text == youtube.command {
+        return youtube.main_page
+    }
+
+    let main = &String::from(youtube.main_page).clone()[..];
+    for (i, scnd) in youtube.scnd_cmd.iter().enumerate() {
+        let size = scnd.len();
+        if &text[..size].to_string() == scnd {
+            let url = &youtube.extend_link[i].replace("{1}", main);
+            let url = &url.replace("{2}", &text[size..]);
+            return url.to_string();
+        }
+    }
+    
+    let url = youtube.extend_link[youtube.extend_link.len()-1].replace("{1}", main);
+    if youtube.space_encoding == 1 {
+        let encoded = plus_encode(&text[youtube.command.len()+1..]);
+        let url = url.replace("{2}", &encoded[..]);
+        url
+    }
+    else {
+        let encoded = percent_encoding(&text[youtube.command.len()+1..]);
+        let url = url.replace("{2}", &encoded[..]);
+        url
+    }
 }
 
 pub fn get_command(command: &str) -> &str {
@@ -34,33 +77,6 @@ pub fn search_direct(search_txt: &str) -> String {
     }
 }
 
-pub fn youtube_redirect(search_txt: &str) -> String {
-    let link = String::from("https://youtube.com/");
-    if search_txt == "yt" {
-        link
-    }
-    else if &search_txt[..4] == "yt @" {
-        let user_url = format!("{}{}",link,&search_txt[3..]);
-        user_url
-    }
-    else {
-        let encoded = youtube_encode(&search_txt[3..]);
-        let search_url = format!("{}{}", link, encoded);
-        search_url
-    }
-}
-
-fn youtube_encode(text: &str) -> String {
-    let text = text.replace(" ", "+");
-    let search = format!("results?search_query={}", text);
-    search
-}
-
-fn direct_url(link: &str) -> String {
-    let link = format!("https://{}",&link[2..]);
-    link
-}
-
 pub fn reddit_redirect(search_txt: &str) -> String {
     let link = String::from("https://reddit.com/");
     if search_txt == "rd" {
@@ -80,4 +96,20 @@ pub fn reddit_redirect(search_txt: &str) -> String {
         , link, encoded);
         search_url
     }
+}
+
+fn direct_url(link: &str) -> String {
+    let link = format!("https://{}",&link[2..]);
+    link
+}
+
+fn plus_encode(text: &str) -> String {
+    let text = text.replace(" ", "+");
+    text
+}
+
+fn percent_encoding(text: &str) -> String {
+    let text = utf8_percent_encode(text,
+         FRAGMENT).to_string();
+    text
 }
